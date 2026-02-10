@@ -80,3 +80,7 @@ football-event-tactical-analysis/
 | Pressures | Defensive pressing actions |
 | Heatmap | Spatial distribution of team activity |
 | Top Players | Ranked by total events, passes, shots |
+
+## 📸 Screenshot
+
+<img width="1728" height="852" alt="image" src="https://github.com/user-attachments/assets/70532fed-a3ce-4718-b712-64ec904de6bc" />
