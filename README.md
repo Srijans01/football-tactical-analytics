@@ -84,3 +84,9 @@ football-event-tactical-analysis/
 ## 📸 Screenshot
 
 <img width="1728" height="852" alt="image" src="https://github.com/user-attachments/assets/70532fed-a3ce-4718-b712-64ec904de6bc" />
+
+<img width="1728" height="934" alt="image" src="https://github.com/user-attachments/assets/946ff209-d0b3-493f-b212-514fe7e0892c" />
+
+<img width="1728" height="912" alt="image" src="https://github.com/user-attachments/assets/bf45ddf6-fd30-4a2c-8396-5e1de9f117cf" />
+
+
