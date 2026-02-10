@@ -81,7 +81,7 @@ football-event-tactical-analysis/
 | Heatmap | Spatial distribution of team activity |
 | Top Players | Ranked by total events, passes, shots |
 
-## 📸 Screenshot
+## 📸 Screenshots
 
 <img width="1728" height="852" alt="image" src="https://github.com/user-attachments/assets/70532fed-a3ce-4718-b712-64ec904de6bc" />
 <img width="1728" height="933" alt="image" src="https://github.com/user-attachments/assets/f6935c11-2862-4464-977b-9358229fb9f3" />
