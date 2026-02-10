@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Tactical Analysis</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #1a5f2a 0%, #2d8f4e 100%);
+            --card-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .hero {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+        }
+        .hero h1 { font-weight: 700; }
+        .upload-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            padding: 3rem;
+            transition: transform 0.3s ease;
+        }
+        .upload-container:hover { transform: translateY(-5px); }
+        .upload-zone {
+            border: 3px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: #2d8f4e;
+            background: #f0fff4;
+        }
+        .upload-zone i { font-size: 4rem; color: #2d8f4e; margin-bottom: 1rem; }
+        .btn-analyze {
+            background: var(--primary-gradient);
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+        .btn-analyze:hover { transform: scale(1.05); box-shadow: 0 5px 20px rgba(45,143,78,0.4); }
+        .results-section { display: none; }
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-box.green { background: var(--primary-gradient); }
+        .stat-box.blue { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-box.orange { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .stat-number { font-size: 2.5rem; font-weight: 700; }
+        .plot-img { width: 100%; border-radius: 10px; }
+        .loading { display: none; }
+        .spinner-border { width: 3rem; height: 3rem; }
+        .file-info { margin-top: 1rem; padding: 1rem; background: #e8f5e9; border-radius: 10px; }
+        .match-header h4 { color: #1a5f2a; font-weight: 700; margin-bottom: 0; }
+        .team-card {
+            background: linear-gradient(135deg, #1a5f2a 0%, #2d8f4e 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .team-card h6 { font-size: 1.3rem; margin-bottom: 1rem; }
+        .team-card .team-stat { display: flex; justify-content: space-between; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .team-card .team-stat:last-child { border-bottom: none; }
+        .cluster-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #2d8f4e;
+        }
+        .cluster-card h6 { margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .cluster-card .desc { color: #666; font-size: 0.9rem; margin-bottom: 0.8rem; }
+        .cluster-card .stats { display: flex; gap: 1.5rem; font-size: 0.85rem; }
+        .cluster-card .stats span { color: #333; }
+        .cluster-table th { background: #2d8f4e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="hero text-center">
+        <div class="container">
+            <h1><i class="fas fa-futbol me-3"></i>Football Tactical Analysis</h1>
+            <p class="lead mb-0">Upload match event data to discover attacking patterns and tactical insights</p>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <!-- Data Sources Info -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-10">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-database me-2"></i>Get Free Match Data</h5>
+                    <p class="mb-0"><strong>StatsBomb Open Data:</strong> <a href="https://github.com/statsbomb/open-data/tree/master/data/events" target="_blank">github.com/statsbomb/open-data/data/events</a> — Download any JSON file from the <code>events</code> folder (e.g., 15946.json)</p>
+                </div>
+            </div>
+        </div>
+        <!-- Upload Section -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-lg-8">
+                <div class="upload-container">
+                    <h4 class="text-center mb-4"><i class="fas fa-cloud-upload-alt me-2"></i>Upload Event Data</h4>
+                    <div class="upload-zone" id="dropZone">
+                        <i class="fas fa-file-upload"></i>
+                        <h5>Drag & Drop your JSON file here</h5>
+                        <p class="text-muted mb-3">or click to browse</p>
+                        <input type="file" id="fileInput" accept=".json,.csv" hidden>
+                        <small class="text-muted">Supports JSON and CSV formats</small>
+                    </div>
+                    <div class="file-info" id="fileInfo" style="display:none;">
+                        <i class="fas fa-file-code me-2"></i><span id="fileName"></span>
+                        <button class="btn btn-sm btn-outline-danger float-end" id="removeFile">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="text-center mt-4">
+                        <button class="btn btn-analyze btn-success text-white" id="analyzeBtn" disabled>
+                            <i class="fas fa-chart-line me-2"></i>Analyze Data
+                        </button>
+                    </div>
+                    <div class="loading text-center mt-4" id="loading">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2 text-muted">Analyzing patterns...</p>
+                    </div>
+                    <div class="alert alert-danger mt-3" id="errorAlert" style="display:none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="results">
+            <h3 class="text-center mb-4"><i class="fas fa-chart-pie me-2"></i>Analysis Results</h3>
+            
+            <!-- Stats Row -->
+            <div class="row mb-4" id="statsRow">
+                <div class="col-12 mb-3">
+                    <div class="match-header text-center">
+                        <h4 id="matchTitle"></h4>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-box green">
+                        <div class="stat-number"><span id="team1Possession">0%</span> | <span id="team1Shots">0</span> shots</div>
+                        <div id="team1Name">Team 1</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="stat-box blue">
+                        <div class="stat-number"><span id="team2Possession">0%</span> | <span id="team2Shots">0</span> shots</div>
+                        <div id="team2Name">Team 2</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plots Row -->
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="result-card">
+                        <h5><i class="fas fa-map me-2"></i>Team Activity Heatmaps</h5>
+                        <p class="text-muted small">Shows where each team had the most activity on the pitch</p>
+                        <img id="heatmapPlot" class="plot-img" src="" alt="Heatmap">
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="result-card">
+                        <h5><i class="fas fa-chart-bar me-2"></i>Team Performance</h5>
+                        <p class="text-muted small">Passes, shots, and pressures by each team</p>
+                        <img id="statsPlot" class="plot-img" src="" alt="Stats Plot">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Stats -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="result-card">
+                        <h5><i class="fas fa-users me-2"></i>Team Comparison</h5>
+                        <div class="row" id="teamCards"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Stats -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="result-card">
+                        <h5><i class="fas fa-user me-2"></i>Top 10 Players by Activity</h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="playerTable">
+                                <thead class="table-success">
+                                    <tr>
+                                        <th>Player</th>
+                                        <th>Team</th>
+                                        <th>Events</th>
+                                        <th>Passes</th>
+                                        <th>Shots</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cluster Summary -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="result-card">
+                        <h5><i class="fas fa-lightbulb me-2"></i>Match Insights</h5>
+                        <div id="matchInsights"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const removeFile = document.getElementById('removeFile');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const errorAlert = document.getElementById('errorAlert');
+
+        let selectedFile = null;
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        removeFile.addEventListener('click', clearFile);
+
+        function handleFile(file) {
+            if (file && (file.name.endsWith('.json') || file.name.endsWith('.csv'))) {
+                selectedFile = file;
+                fileName.textContent = file.name;
+                fileInfo.style.display = 'block';
+                analyzeBtn.disabled = false;
+                errorAlert.style.display = 'none';
+            }
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.style.display = 'none';
+            analyzeBtn.disabled = true;
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+            
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            errorAlert.style.display = 'none';
+            analyzeBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/analyze', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.error) {
+                    errorAlert.textContent = data.error;
+                    errorAlert.style.display = 'block';
+                } else {
+                    displayResults(data);
+                }
+            } catch (err) {
+                errorAlert.textContent = 'An error occurred. Please try again.';
+                errorAlert.style.display = 'block';
+            }
+
+            loading.style.display = 'none';
+            analyzeBtn.disabled = false;
+        });
+
+        function displayResults(data) {
+            // Match header
+            const teams = data.summary.teams;
+            document.getElementById('matchTitle').textContent = `${teams[0]} vs ${teams[1]}`;
+            
+            // Calculate possession %
+            const t1 = data.team_stats[0];
+            const t2 = data.team_stats[1];
+            const totalPasses = t1.passes + t2.passes;
+            const t1Poss = Math.round((t1.passes / totalPasses) * 100);
+            const t2Poss = 100 - t1Poss;
+            
+            document.getElementById('team1Name').textContent = t1.team + ' Possession';
+            document.getElementById('team1Possession').textContent = t1Poss + '%';
+            document.getElementById('team2Name').textContent = t2.team + ' Possession';
+            document.getElementById('team2Possession').textContent = t2Poss + '%';
+            document.getElementById('team1Shots').textContent = t1.shots;
+            document.getElementById('team2Shots').textContent = t2.shots;
+
+            document.getElementById('heatmapPlot').src = 'data:image/png;base64,' + data.heatmap_plot;
+            document.getElementById('statsPlot').src = 'data:image/png;base64,' + data.stats_plot;
+
+            // Match Insights
+            const insights = document.getElementById('matchInsights');
+            insights.innerHTML = generateInsights(data);
+
+            // Team stats
+            const teamCards = document.getElementById('teamCards');
+            teamCards.innerHTML = '';
+            for (const team of data.team_stats) {
+                teamCards.innerHTML += `
+                    <div class="col-md-6">
+                        <div class="team-card">
+                            <h6><i class="fas fa-shield-alt me-2"></i>${team.team}</h6>
+                            <div class="team-stat"><span>Total Events</span><strong>${team.total_events}</strong></div>
+                            <div class="team-stat"><span>Passes</span><strong>${team.passes}</strong></div>
+                            <div class="team-stat"><span>Shots</span><strong>${team.shots}</strong></div>
+                            <div class="team-stat"><span>Pressures</span><strong>${team.pressures}</strong></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Player stats
+            const playerBody = document.querySelector('#playerTable tbody');
+            playerBody.innerHTML = '';
+            for (const p of data.player_stats) {
+                playerBody.innerHTML += `<tr>
+                    <td><strong>${p.player}</strong></td>
+                    <td>${p.team}</td>
+                    <td>${p.events}</td>
+                    <td>${p.passes}</td>
+                    <td>${p.shots}</td>
+                </tr>`;
+            }
+
+            results.style.display = 'block';
+            results.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generateInsights(data) {
+            const teams = data.team_stats;
+            const players = data.player_stats;
+            let html = '<div class="row">';
+            
+            // Determine dominant team
+            const t1 = teams[0], t2 = teams[1];
+            const dominant = t1.passes > t2.passes ? t1 : t2;
+            const other = t1.passes > t2.passes ? t2 : t1;
+            
+            // Possession dominance
+            const possRatio = ((dominant.passes / (dominant.passes + other.passes)) * 100).toFixed(0);
+            html += `<div class="col-md-6"><div class="cluster-card">
+                <h6>⚽ Possession Dominance</h6>
+                <p class="desc"><strong>${dominant.team}</strong> controlled ${possRatio}% of passes, showing clear ball dominance over ${other.team}.</p>
+            </div></div>`;
+            
+            // Attacking threat
+            const moreShots = t1.shots > t2.shots ? t1 : t2;
+            html += `<div class="col-md-6"><div class="cluster-card">
+                <h6>🎯 Attacking Threat</h6>
+                <p class="desc"><strong>${moreShots.team}</strong> created more shooting opportunities with ${moreShots.shots} shots compared to ${moreShots === t1 ? t2.shots : t1.shots}.</p>
+            </div></div>`;
+            
+            // Pressing intensity
+            const presser = t1.pressures > t2.pressures ? t1 : t2;
+            html += `<div class="col-md-6"><div class="cluster-card">
+                <h6>💪 Pressing Intensity</h6>
+                <p class="desc"><strong>${presser.team}</strong> applied high pressure with ${presser.pressures} pressing actions, disrupting opponent's build-up.</p>
+            </div></div>`;
+            
+            // Key player
+            if (players.length > 0) {
+                const mvp = players[0];
+                html += `<div class="col-md-6"><div class="cluster-card">
+                    <h6>⭐ Most Influential Player</h6>
+                    <p class="desc"><strong>${mvp.player}</strong> (${mvp.team}) was the most active with ${mvp.events} events, ${mvp.passes} passes and ${mvp.shots} shots.</p>
+                </div></div>`;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+    </script>
+</body>
+</html>
